@@ -1,0 +1,147 @@
+\documentclass[withoutpreface,bwprint]{cumcmthesis}
+%这里是导言区
+\usepackage{url}
+\usepackage{epsfig}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{diagbox}
+\usepackage{algorithm}
+\usepackage{listings}
+\usepackage{algpseudocode}
+\usepackage{appendix}
+
+\title{数值代数上机报告}
+\date{\today}
+\author{Jinze Wu 1700010643}
+\begin{document}
+\maketitle
+\section{数值结果与分析}
+对于84阶方程组
+\begin{equation}
+\begin{bmatrix}
+   6 & 1 &       &         &        &   \\
+   8 &  6 & 1     &      &        &   \\
+     & 8 & 6     &  1       &        &    \\
+     &    &\ddots   & \ddots    & \ddots   &      \\
+     &   &      &   8      &  6      &   1  \\   
+     &    &       &          &   8      &   6  \\   
+\end{bmatrix}
+\begin{bmatrix}
+$$x_{1}$$\\
+$$x_{2}$$\\
+$$x_{3}$$\\
+$$\vdots$$\\
+$$x_{n-1}$$\\
+$$x_{n}$$\\
+\end{bmatrix}
+=
+\begin{bmatrix}
+7\\
+15\\
+15\\
+\vdots\\
+15\\
+14\\
+\end{bmatrix}
+\end{equation}
+%$$Ax=b$$
+
+真解为$x=[1 \dots 1 ]^{T}$ (元素全为1的$84\time1$的矩阵)
+
+利用matlab分别编写不选主元Gauss消去法与列主元Gauss消去法的函数计算得到解，再计算所得解与真解相比误差的二范数与无穷范数
+
+利用不选主元Gauss消去法得到的解为$x_{1}$
+
+利用列主元Gauss消去法得到的解为$x_{2}$
+
+计算得$\lVert x_{1}-x \rVert_{2}= 7.259*10^{8}$， $\lVert x_{2}-x \rVert_{2}=3.782*10^{-6}$
+
+$\lVert x_{1}-x \rVert_{\infty}=5.368*10^{8}$， $\lVert x_{2}-x \rVert_{\infty}=2.797*10^{-6}$计算时间都约为0.02s
+
+利用不选主元Gauss消去法可能会由于小主元与机器精度使计算结果误差很大，而列主元Gauss消去法可以避免这一点
+
+在矩阵A中有小主元的比较病态的情况，应用列主元Gauss消去法代替不选主元Gauss消去法，一般来说可以大大提高计算精度，并且需要额外付出的时间代价微乎其微！
+
+
+\section{matlab 程序代码}
+\begin{lstlisting}[language=matlab]
+function [ x ] =LUsolve(A, b)
+%LUsolve
+%对于方程Ax=b，利用LU分解法求解
+
+n = size(A,1);
+U=zeros(n,n);
+L=zeros(n,n);
+B=A;
+for i=1:n-1
+    B(i+1:n,i)=B(i+1:n,i)/B(i,i);
+    B(i+1:n,i+1:n)=B(i+1:n,i+1:n)-B(i+1:n,i)*B(i,i+1:n);
+end
+for i=1:n
+    U(i,:)=[zeros(1,i-1),B(i,i:n)];
+    L(i,:)=[B(i,1:i-1),1,zeros(1,n-i)];
+end
+for i=1:n
+    z(i)=b(i);
+    for j=1:i-1
+    z(i)=z(i)-L(i,j)*z(j);
+    end
+end
+x = zeros(n,1);
+for i=0:n-1
+    x(n-i)=(z(n-i)-U(n-i,n-i+1:n)*x(n-i+1:n,1))/U(n-i,n-i);
+end
+end
+
+function [ x ] =LUcolumnsolve(A, b)
+%LUcolumnsolve此处显示有关此函数的摘要
+%对于方程Ax=b，利用LU列主元分解法求解
+
+n = size(A,1);
+u=zeros(n,1);%记录置换矩阵P
+U=zeros(n,n);
+L=zeros(n,n);
+
+B=A;
+for i=1:n-1
+    [a1,a2]=max(B(i:n,i));
+    u(i)=a2+i-1;
+    t1=B(i,:);
+    B(i,:)=B(a2+i-1,:);
+    B(a2+i-1,:)=t1;
+    B(i+1:n,i)=B(i+1:n,i)/B(i,i);
+    B(i+1:n,i+1:n)=B(i+1:n,i+1:n)-B(i+1:n,i)*B(i,i+1:n);
+end%矩阵B存储了L,U的信息
+for i=1:n
+    U(i,:)=[zeros(1,i-1),B(i,i:n)];
+    L(i,:)=[B(i,1:i-1),1,zeros(1,n-i)];
+end
+for i=1:n-1
+    t=b(i);
+    b(i)=b(u(i));
+    b(u(i))=t;
+end
+z = zeros(n,1);
+for i=1:n
+    z(i)=b(i);
+    for j=1:i-1
+    z(i)=z(i)-L(i,j)*z(j);
+    end
+end
+x = zeros(n,1);
+for i=0:n-1
+    x(n-i)=(z(n-i)-U(n-i,n-i+1:n)*x(n-i+1:n,1))/U(n-i,n-i);
+end
+end
+
+b=ones(84,1)*15;
+b(1)=7;
+b(84)=14;
+A=full(spdiags([ones(84,1)*8,ones(84,1)*6,ones(84,1)],[-1 0 1],84,84));
+x1=LUsolve(A,b);
+x2=LUcolumnsolve(A,b);
+c=ones(84,1);
+r1=norm(x1-c,2)
+r2=norm(x2-c,2)
+\end{lstlisting}
+\end{document}
