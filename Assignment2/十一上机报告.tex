@@ -107,6 +107,10 @@ f(x_i,y_{N-1})
 \centering\includegraphics[width=.6\textwidth]{计算时间.eps}
 \end{figure}
 
+\begin{figure}[!h]
+\centering\includegraphics[width=.6\textwidth]{计算时间3.eps}
+\end{figure}
+
 总结：一般的Gauss消去法运算量约为$\frac{2}{3}N^6$，$LDL^T$方法，所需要的运算量约为$\frac{1}{3}N^6$，对大规模的矩阵算起来特别慢。
 而带状Gauss消去法运算量约为$O(N^4)$，当矩阵规模增大时带状Gauss消去法相比于之前两种大大缩短了计算时间，并且比用matlab中已有的程序包求解还要快一些。
 
